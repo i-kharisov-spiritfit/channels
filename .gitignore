@@ -1,3 +1,10 @@
 /venv
 /chat_channels/db.sqlite3
 /.idea
+chat-daphne.service
+*.log
+*.service
+*.socket
+*__pycache__*
+chat_channels/chat/settings.json
+/chat_channels/static/admin/

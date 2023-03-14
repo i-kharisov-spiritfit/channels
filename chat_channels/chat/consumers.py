@@ -1,3 +1,4 @@
+import datetime
 
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
@@ -5,7 +6,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from .models import Client, Chat, Message
 from django.core.exceptions import ObjectDoesNotExist
-
+from . import CRest
+from . import functions
+import hashlib
+import calendar
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
@@ -15,20 +19,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.client.save()
 
     @database_sync_to_async
-    def getMessages(self, offset=0, limit=1):
+    def getMessages(self, offset=0, limit=1, timestamp=None):
         try:
-            messages = Message.objects.filter(chat_id=self.chat.id).order_by('-timestamp')[offset:limit]
+            if timestamp:
+                messages = Message.objects.filter(chat_id=self.chat.id, timestamp__lte=datetime.datetime.fromtimestamp(timestamp)).order_by('-timestamp')[0:limit]
+            else:
+                messages = Message.objects.filter(chat_id=self.chat.id).order_by('-timestamp')[offset:limit]
 
             message_list=[]
             for m in messages:
                 message_item={
                     "id": m.id,
-                    "text": m.text,
-                    "timestamp": m.timestamp.strftime("%d.%m.%Y %H:%M"),
-                    # "owner": m.owner.owner_type
+                    "text": functions.convertBB(m.text),
+                    "timestamp": calendar.timegm(m.timestamp.utctimetuple()),
                     "owner": {
                         "type":m.owner.owner_type,
                         "name":m.owner.name,
+                        "picture":m.owner.picture,
                         "surname":m.owner.surname,
                         "id":m.owner.pk
                     },
@@ -59,7 +66,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         return message.pk, message.timestamp
 
-
     async def connect(self):
         self.client = self.scope['client']
 
@@ -67,7 +73,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close(code=4004)
             return
 
-        self.chat=await self.setChat(self.scope['url_route']['kwargs']['chat_id'])
+        chat_id = hashlib.md5(self.client.phone.encode())
+
+        self.chat=await self.setChat(chat_id.hexdigest())
 
         await self.accept()
         await self.channel_layer.group_add(self.chat.id, self.channel_name)
@@ -85,26 +93,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         count = getattr(self.channel_layer, f'count_{self.chat.id}', 0)
         if not count:
-            print(f"{self.client.phone} ON_LINE")
             setattr(self.channel_layer, f'count_{self.chat.id}', 1)
         else:
             setattr(self.channel_layer, f'count_{self.chat.id}', count + 1)
 
-        print(f"{self.client.phone} CONNECTED, ROOM: {self.chat.id}")
-
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.chat.id, self.channel_name)
+        if not self.client or not self.client.access:
+            await self.close(code=4004)
+            return
 
-        print(f"{self.client.phone} DISCONNECTED, ROOM: {self.chat.id}, CLOSE CODE: {close_code}")
+        await self.channel_layer.group_discard(self.chat.id, self.channel_name)
 
         count = getattr(self.channel_layer, f'count_{self.chat.id}', 0)
         setattr(self.channel_layer, f'count_{self.chat.id}', count - 1)
         if count == 1:
             delattr(self.channel_layer, f'count_{self.chat.id}')
             await self.setClient(False)
-
-            print(f"{self.client.phone} OFF_LINE")
-
 
     async def receive(self, text_data=None, bytes_data=None):
         data_json = json.loads(text_data)
@@ -117,6 +121,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 owner_type = "client"
                 message_id, message_timestamp=await self.setMessage(text)
 
+                arMessage = {
+                    'user':{
+                        'id':self.client.pk,
+                        'name':self.client.name,
+                        'picture':self.client.picture,
+                        'phone':self.client.phone,
+                        'skip_phone_validate':'N'
+                    },
+                    'message':{
+                        'id':message_id,
+                        'date':message_timestamp.strftime('%s'),
+                        'disable_crm':'N',
+                        'text':text,
+                        # 'files':None
+                    },
+                    'chat':{
+                        'id':self.chat.id,
+                    }
+                }
+
+                _result = CRest().call('imconnector.send.messages', {
+                    'CONNECTOR':functions.get_connector_id(),
+                    'LINE': await functions.get_line_async(),
+                    'MESSAGES':[arMessage]
+                })
+
                 # Send message to room group
                 await self.channel_layer.group_send(
                     self.chat.id, {
@@ -126,30 +156,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             "type":owner_type,
                             "name":self.client.name,
                             "surname":self.client.surname,
+                            "picture":self.client.picture,
                             "id":self.client.pk
                         },
                         'id': message_id,
-                        'timestamp': message_timestamp.strftime("%d.%m.%Y %H:%M")
+                        'timestamp': calendar.timegm(message_timestamp.utctimetuple()),
                     }
                 )
+
+
 
         elif action == "history":
             offset=data_json.get("offset")
             limit = data_json.get("limit")
+            timestamp = data_json.get("timestamp")
 
             if not offset:
                 offset=0
 
             if not limit:
-                limit=50
+                limit=25
 
-            messages = await self.getMessages(offset, limit)
+            messages = await self.getMessages(offset, limit, timestamp)
 
             await self.send(text_data=json.dumps({
                 'event': "history",
                 'messages': messages,
             }, indent=4, sort_keys=True, default=str))
-
 
     async def chat_message(self, event):
         text = event["text"]
@@ -160,7 +193,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'event': "send",
             'id': message_id,
-            'text': text,
+            'text': functions.convertBB(text),
             'owner': owner,
             'timestamp': timestamp
         }, indent=4, sort_keys=True, default=str))

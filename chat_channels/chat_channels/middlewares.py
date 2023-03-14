@@ -4,11 +4,12 @@ import requests
 from chat.models import Client
 from django.core.exceptions import ObjectDoesNotExist
 
+
 @database_sync_to_async
 def get_user(token):
     #ПРОВЕРКА ЧЕРЕЗ 1C
     r=requests.get(
-        url="https://app.spiritfit.ru/fitness-test1/hs/website/chats",
+        url="https://1c.spiritfit.ru/fitness-test1/hs/website/chats",
         headers={
             "Authorization":token
         }
@@ -17,7 +18,7 @@ def get_user(token):
     json_data=r.json()
 
     response=json_data.get("result")
-    if response:
+    if response and json_data.get("success"):
         phone = response['phone']
         name = response['name']
         surname = response['surname']
@@ -29,10 +30,14 @@ def get_user(token):
             client.online = True
             client.access = access
             client.mobile_token = token
+            client.photo = photo
             client.save()
         except ObjectDoesNotExist:
             client = Client(phone=phone, name=name, surname=surname, picture=photo, access=access, online=True, mobile_token=token)
             client.save()
+
+
+
         return client
 
     return None

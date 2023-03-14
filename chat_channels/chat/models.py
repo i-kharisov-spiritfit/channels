@@ -6,7 +6,6 @@ from django.db import models
 class Chat(models.Model):
     id=models.CharField('ID', max_length=255, primary_key=True)
 
-
 class ChatMember(models.Model):
     name = models.CharField('Имя', max_length=255, null=True, blank=True)
     surname = models.CharField('Фамилия', max_length=255, null=True, blank=True)
@@ -15,8 +14,6 @@ class ChatMember(models.Model):
     chats = models.ManyToManyField(Chat)
 
     owner_type = models.CharField(max_length=10, default="unknown")
-
-
 
 class Client(ChatMember):
     phone = models.CharField('Номер телефона', max_length=10, unique=True, null=False)
@@ -34,7 +31,6 @@ class Client(ChatMember):
     def __str__(self):
         return str((self.name, self.phone, self.online))
 
-
 class Operator(ChatMember):
     out_id=models.IntegerField('ID на портале', unique=True, null=False, blank=False)
 
@@ -46,9 +42,11 @@ class Operator(ChatMember):
     def __str__(self):
         return str((self.out_id, self.name))
 
-
 class Message(models.Model):
     text = models.TextField('Текст сообщения')
     timestamp = models.DateTimeField('Дата и время сообщения', auto_now_add=True)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
     owner = models.ForeignKey(ChatMember, on_delete=models.CASCADE)
+
+class Settings(models.Model):
+    line = models.IntegerField('ID линии на портале')
