@@ -192,7 +192,7 @@ def handler(request):
                 _response = CRest().call('user.get', {'ID' : operator_id})
                 if _response.get('result'):
                     user = _response.get('result')[0]
-                    operator = Operator(name=user["NAME"], surname=user["LAST_NAME"], picture=user["PERSONAL_PHOTO"], out_id=operator_id)
+                    operator = Operator(name=user.get("NAME") if user.get("NAME") else "unname", surname=user.get("LAST_NAME") if user.get("LAST_NAME") else "unsurname", picture=user.get("PERSONAL_PHOTO"), out_id=operator_id)
                 else:
                     operator = Operator(name="unname", surname="unname", out_id=operator_id)
                     operator.chats.add(chat_id)
