@@ -80,8 +80,8 @@ WSGI_APPLICATION = 'chat_channels.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'chat.spiritfit',
-        'USER': 'chat_spiritfit',
+        'NAME': 'devchat.spiritfit',
+        'USER': 'devchat_spiritfit',
         'PASSWORD': 'Se1Kp2JH{H',
         'HOST': 'localhost',
         'PORT': '',
@@ -113,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -134,11 +134,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ASGI_APPLICATION = "chat_channels.routing.application"
 
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = 6379
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
+
+CONNECTORS = {
+    "mobile_app" : {
+        "id":"mobile_devchat_connector",
+        "name":"mobile_app_devchat",
+        "handler_url":"https://devchat.spiritfit.ru/chat/handler",
+        "widgetUri":"https://devchat.spiritfit.ru/"
+    }
+}
+
+C_REST_CLIENT_ID = 'local.641b7e68e4f0f7.42938766'                              #Application ID
+C_REST_CLIENT_SECRET = 'YFTpVLubEtk12AWChEQqsEMqHsnOZbZD4J2kB7YQXQ1IKgLbhC'     #Application key

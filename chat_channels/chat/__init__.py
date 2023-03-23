@@ -7,8 +7,7 @@ import random
 from django.core.handlers.wsgi import WSGIRequest
 import re
 
-C_REST_CLIENT_ID = 'local.640651c3ec4b68.08423838'                              #Application ID
-C_REST_CLIENT_SECRET = 'uVl6J0pUxa4MwgHnPRzpMOo7NhH7Ww4i8Cg3HxraCZQ2sIxznN'     #Application key
+from chat_channels.settings import C_REST_CLIENT_ID, C_REST_CLIENT_SECRET
 
 C_REST_BLOCK_LOG = False
 C_REST_LOGS_DIR = os.path.dirname(os.path.realpath(__file__)) + '/logs/'
@@ -214,6 +213,9 @@ class CRest:
                                              'followlocation') else True)
                 result = r.json()
 
+                with open('log.log', 'a', encoding='utf-8') as file:
+                    file.write(f'call_result: {result}\n')
+
                 if not PHP.empty(result.get('error')):
                     if result.get('error') == 'expired_token' and PHP.empty(params.get('this_auth')):
                         result = self.GetNewAuth(params)
@@ -276,6 +278,9 @@ class CRest:
 
             new_data = self.callRequest(params_auth)
 
+            with open('log.log', 'a', encoding='utf-8') as file:
+                file.write(f'new_data: {new_data}\n')
+
             if new_data.get('C_REST_CLIENT_ID'):
                 new_data.pop('C_REST_CLIENT_ID')
 
@@ -285,6 +290,8 @@ class CRest:
             if self.setAppSettings(new_data):
                 params['this_auth'] = 'N'
                 result = self.callRequest(params)
+
+
 
         return result
 

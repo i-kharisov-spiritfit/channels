@@ -13,10 +13,10 @@ import calendar
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
-    @database_sync_to_async
-    def setClient(self, online=True):
-        self.client.online=online
-        self.client.save()
+    # @database_sync_to_async
+    # def setClient(self, online=True):
+    #     self.client.online=online
+    #     self.client.save()
 
     @database_sync_to_async
     def getMessages(self, offset=0, limit=1, timestamp=None):
@@ -47,6 +47,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         except ObjectDoesNotExist:
             return None
+
+    @database_sync_to_async
+    def getChatMembers(self):
+        chat_members = self.chat.chatmember_set.all()
+
+        result=[]
+        if chat_members:
+            for member in chat_members:
+                if member.id != self.client.id:
+                    result.append({
+                        "id":member.id,
+                        "name":member.name,
+                        "surname":member.surname,
+                        "picture":member.picture,
+                        "type":member.owner_type
+                    })
+
+        return result
 
     @database_sync_to_async
     def setChat(self, chat_id):
@@ -83,9 +101,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         messages = await self.getMessages(0, 25)
 
+        chat_members = await self.getChatMembers()
+
         await self.send(text_data=json.dumps({
             'event': "history",
             'messages': messages,
+            "members": chat_members,
+            "self_id": self.client.id
         }, indent=4, sort_keys=True, default=str))
 
 
@@ -96,6 +118,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             setattr(self.channel_layer, f'count_{self.chat.id}', 1)
         else:
             setattr(self.channel_layer, f'count_{self.chat.id}', count + 1)
+
+        self.client.online = True
 
     async def disconnect(self, close_code):
         if not self.client or not self.client.access:
@@ -108,7 +132,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         setattr(self.channel_layer, f'count_{self.chat.id}', count - 1)
         if count == 1:
             delattr(self.channel_layer, f'count_{self.chat.id}')
-            await self.setClient(False)
+            self.client.online = False
 
     async def receive(self, text_data=None, bytes_data=None):
         data_json = json.loads(text_data)
@@ -146,6 +170,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'LINE': await functions.get_line_async(),
                     'MESSAGES':[arMessage]
                 })
+
+                await self.send(text_data=json.dumps(_result, indent=4, sort_keys=True, default=str))
+                await self.send(text_data=json.dumps({
+                    'CONNECTOR':functions.get_connector_id(),
+                    'LINE': await functions.get_line_async(),
+                    'MESSAGES':[arMessage]
+                }, indent=4, sort_keys=True, default=str))
 
                 # Send message to room group
                 await self.channel_layer.group_send(
