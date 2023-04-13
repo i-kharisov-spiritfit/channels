@@ -8,3 +8,6 @@ chat-daphne.service
 *__pycache__*
 chat_channels/chat/settings.json
 /chat_channels/static/admin/
+/chat_channels/chat_channels/settings.py
+/chat_channels/portal/settings.json
+/chat_channels/uploads/

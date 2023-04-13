@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'channels',
-    'chat',
+    'main',
+    'portal'
 ]
 
 MIDDLEWARE = [
@@ -80,8 +80,8 @@ WSGI_APPLICATION = 'chat_channels.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'chat.spiritfit',
-        'USER': 'chat_spiritfit',
+        'NAME': 'devchat.spiritfit',
+        'USER': 'devchat_spiritfit',
         'PASSWORD': 'Se1Kp2JH{H',
         'HOST': 'localhost',
         'PORT': '',
@@ -113,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -134,11 +134,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ASGI_APPLICATION = "chat_channels.routing.application"
 
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = 6379
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
