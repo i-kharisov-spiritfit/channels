@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'channels',
-    'chat',
+    'main',
+    'portal'
 ]
 
 MIDDLEWARE = [
@@ -145,15 +145,3 @@ CHANNEL_LAYERS = {
         },
     },
 }
-
-CONNECTORS = {
-    "mobile_app" : {
-        "id":"mobile_devchat_connector",
-        "name":"mobile_app_devchat",
-        "handler_url":"https://devchat.spiritfit.ru/chat/handler",
-        "widgetUri":"https://devchat.spiritfit.ru/"
-    }
-}
-
-C_REST_CLIENT_ID = 'local.641b7e68e4f0f7.42938766'                              #Application ID
-C_REST_CLIENT_SECRET = 'YFTpVLubEtk12AWChEQqsEMqHsnOZbZD4J2kB7YQXQ1IKgLbhC'     #Application key
