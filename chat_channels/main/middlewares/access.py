@@ -62,7 +62,9 @@ class AccessToLineBaseMiddleware(BaseMiddleware):
             )
 
         scope['access'] = a.access
-
+        if not scope['access']:
+            denier = WebsocketDenier()
+            return await denier(scope, receive, send)
 
 
         return await super().__call__(scope, receive, send)
@@ -138,9 +140,9 @@ class AccessToLineFromCrmMiddleware(BaseMiddleware):
 
             scope['access'] = a.check_line_access_by_token()
 
-        # if not scope['access']:
-        #     denier = WebsocketDenier()
-        #     return await denier(scope, receive, send)
+        if not scope['access']:
+            denier = WebsocketDenier()
+            return await denier(scope, receive, send)
 
         scope['line'] = line
         scope['user'] = a.user
