@@ -7,6 +7,7 @@ from django.http import HttpResponse, JsonResponse
 import base64
 from PIL import Image
 from io import BytesIO
+from django.conf import settings as project_settings
 
 
 
@@ -15,14 +16,16 @@ class prtl_Line(Line):
     icon = models.ImageField("Иконка для портала", upload_to='uploads/lines/icons/')
 
     def install_connector(self):
+        self.icon.save(self.icon.name, self.icon.file)
+
         crest = CRest()
 
-        binary_fc = open('uploads/lines/icons/' + self.icon.name, 'rb').read()
+        binary_fc = open(self.icon.name, 'rb').read()
         base64_utf8_str = base64.b64encode(binary_fc).decode('utf-8')
         ext = self.icon.name.split('.')[-1]
         dataurl_active = f'data:image/{ext};base64,{base64_utf8_str}'
 
-        with Image.open('uploads/lines/icons/' + self.icon.name) as img:
+        with Image.open(self.icon.name) as img:
             img.load()
 
         img.convert("L")
@@ -47,7 +50,7 @@ class prtl_Line(Line):
                 'POSITION': 'center',
                 'COLOR': '#ffb3a3',
             },
-            'PLACEMENT_HANDLER': f"https://devchat.spiritfit.ru/portal/{self.id}/handler/"
+            'PLACEMENT_HANDLER': f"https://"+project_settings.SITE_DOMAIN_NAME+"/portal/{self.id}/handler/"
         })
 
         if not Utils.empty(result.get('result')):
@@ -55,7 +58,7 @@ class prtl_Line(Line):
                 'event.bind',
                 {
                     'event': 'OnImConnectorMessageAdd',
-                    'handler': f"https://devchat.spiritfit.ru/portal/{self.id}/message/"
+                    'handler': f"https://"+project_settings.SITE_DOMAIN_NAME+"/portal/{self.id}/message/"
                 }
             )
             if not Utils.empty(resultEvent.get('result')):
@@ -73,7 +76,7 @@ class prtl_Line(Line):
 
         if not Utils.empty(result.get('result')):
             resultEvent = crest.call("event.unbind", {"event": "OnImConnectorMessageAdd",
-                                                      "handler": f"https://devchat.spiritfit.ru/portal/{self.id}/message/"})
+                                                      "handler": f"https://"+project_settings.SITE_DOMAIN_NAME+"/portal/{self.id}/message/"})
             if not Utils.empty(resultEvent.get('result')):
                 return HttpResponse("successfully")
             else:
