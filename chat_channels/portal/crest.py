@@ -7,8 +7,9 @@ import random
 from django.core.handlers.wsgi import WSGIRequest
 import re
 
-C_REST_CLIENT_ID = 'local.642f0986c35e94.01569628'                              #Application ID
-C_REST_CLIENT_SECRET = 'QRr5yDqMuMDaTkfJVUMad3FH6R9HuzEqM93tTiajfIsAA6IIdv'     #Application key
+from django.conf import settings as project_settings
+
+
 
 C_REST_BLOCK_LOG = False
 C_REST_LOGS_DIR = os.path.dirname(os.path.realpath(__file__)) + '/logs/'
@@ -143,11 +144,11 @@ class CRest:
             with open(file_path, 'r', encoding='utf-8') as file:
                 _return = json.loads(file.read())
 
-            if not Utils.empty(C_REST_CLIENT_ID):
-                _return['C_REST_CLIENT_ID'] = C_REST_CLIENT_ID
+            if not Utils.empty(project_settings.C_REST_CLIENT_ID):
+                _return['C_REST_CLIENT_ID'] = project_settings.C_REST_CLIENT_ID
 
-            if not Utils.empty(C_REST_CLIENT_SECRET):
-                _return['C_REST_CLIENT_SECRET'] = C_REST_CLIENT_SECRET
+            if not Utils.empty(project_settings.C_REST_CLIENT_SECRET):
+                _return['C_REST_CLIENT_SECRET'] = project_settings.C_REST_CLIENT_SECRET
 
         return _return
 

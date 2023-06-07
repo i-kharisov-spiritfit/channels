@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import os
 
+import environ
+
+env = environ.Env()
+environ.Env.read_env()  # reading .env file
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,10 +26,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-pe^z)2isoh-3t$=+i6y282g+&*_c7^c*w@mmq*%0nd5rf*#1hg'
+SECRET_KEY = env.str('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=False)
+TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ["*"]
 
@@ -77,17 +83,9 @@ WSGI_APPLICATION = 'chat_channels.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'devchat.spiritfit',
-        'USER': 'devchat_spiritfit',
-        'PASSWORD': 'Se1Kp2JH{H',
-        'HOST': 'localhost',
-        'PORT': '',
-    }
-}
 
+DATABASES = {'default': env.db('DATABASE_URL')}
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -130,12 +128,10 @@ STATIC_ROOT = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 ASGI_APPLICATION = "chat_channels.routing.application"
 
-REDIS_HOST = '127.0.0.1'
-REDIS_PORT = 6379
+REDIS_HOST = env.str('REDIS_HOST')
+REDIS_PORT = env.str('REDIS_PORT')
 
 CHANNEL_LAYERS = {
     'default': {
@@ -145,3 +141,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+#CREST BITRIX
+C_REST_CLIENT_ID = env.str('C_REST_CLIENT_ID')
+C_REST_CLIENT_SECRET = env.str('C_REST_CLIENT_SECRET')
+
+
+CRM_URL = env.str('CRM_URL')
+SITE_DOMAIN_NAME = env.str('SITE_DOMAIN_NAME')

@@ -7,6 +7,7 @@ from uuid import uuid4
 import requests
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.conf import settings as project_settings
 
 class UserAccess:
     def __init__(self, auth_params, line):
@@ -74,7 +75,7 @@ class UserAccess:
 
 
         r = requests.get(
-            url="https://1c.spiritfit.ru/fitness-test1/hs/website/chats",
+            url=project_settings.CRM_URL+"chats",
             headers=headers
         )
         json_data = r.json()
@@ -162,7 +163,7 @@ def send_push(user, message:Message):
     }
 
     r = requests.post(
-        url="https://1c.spiritfit.ru/fitness-test1/hs/website/chats",
+        url=project_settings.CRM_URL+"chats",
         headers=headers,
         json=data
     )
@@ -175,7 +176,7 @@ def crm_request__get_user(headers):
         file.write(f"++++++\n{datetime.now()}::Отправляюю запрос в 1С:\n {headers}\n++++++\n")
 
     r = requests.get(
-        url="https://1c.spiritfit.ru/fitness-test1/hs/website/chats",
+        url=project_settings.CRM_URL+"chats",
         headers=headers
     )
 
